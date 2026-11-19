@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nhật ký đoàn – An Lâm</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --nen:#f4f6f8; --the:#ffffff; --chu:#1d2733; --phu:#5b6b7b; --vien:#d6dde4;
+    --chinh:#0f6b5c; --chinh-dam:#0a5246; --loi:#b42318; --loi-nen:#fdecea;
+    --ok:#1a7f37; --ok-nen:#e7f6ec; --vang:#9a6700; --vang-nen:#fff6dd;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--nen);color:var(--chu);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{background:var(--chinh);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:5}
+  header h1{font-size:18px;margin:0}
+  header .dong2{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:14px;margin-top:4px;opacity:.95}
+  header button{margin-left:auto}
+  .dem{background:#fff;color:var(--chinh);border-radius:999px;padding:2px 10px;font-weight:700}
+  main{max-width:960px;margin:0 auto;padding:16px 16px 110px}
+  .the{background:var(--the);border:1px solid var(--vien);border-radius:12px;padding:14px;margin-bottom:14px}
+  h2{font-size:16px;margin:0 0 10px}
+  label{display:block;font-size:13px;color:var(--phu);margin-bottom:3px}
+  input,select,textarea{width:100%;font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--vien);border-radius:8px;background:#fff;color:var(--chu)}
+  textarea{min-height:60px;resize:vertical}
+  input:disabled,select:disabled,textarea:disabled{background:#f1f3f5;color:#6b7785}
+  button{font:inherit;font-size:15px;border:0;border-radius:8px;padding:10px 14px;cursor:pointer;background:var(--chinh);color:#fff}
+  button.phu{background:#e9eef2;color:var(--chu)}
+  button.nho{padding:6px 10px;font-size:14px}
+  button:disabled{opacity:.55;cursor:default}
+  .luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+  .an{display:none!important}
+  .thongbao{padding:10px 12px;border-radius:8px;font-size:14px;margin-top:10px}
+  .thongbao.loi{background:var(--loi-nen);color:var(--loi)}
+  .thongbao.ok{background:var(--ok-nen);color:var(--ok)}
+  .thongbao.vang{background:var(--vang-nen);color:var(--vang)}
+  #dangnhap{max-width:380px;margin:40px auto}
+  #dangnhap .luoi{grid-template-columns:1fr}
+  .ds-doan{display:flex;flex-direction:column;gap:6px}
+  .doan-muc{display:flex;flex-wrap:wrap;gap:4px 10px;padding:8px 10px;border:1px solid var(--vien);border-radius:8px;font-size:14px}
+  .doan-muc b{min-width:70px}
+  .nhan{font-size:12px;border-radius:999px;padding:1px 8px;font-weight:600}
+  .nhan.di{background:var(--ok-nen);color:var(--ok)} .nhan.sap{background:var(--vang-nen);color:var(--vang)} .nhan.xong{background:#eef1f4;color:var(--phu)}
+  .dong{position:relative}
+  .dong.da-luu{border-color:var(--ok);background:#fbfefc}
+  .dong.co-loi{border-color:var(--loi)}
+  .dau-dong{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .dau-dong h3{margin:0;font-size:15px}
+  .trang-thai-dong{font-size:14px;font-weight:600}
+  .trang-thai-dong.ok{color:var(--ok)}
+  .xoa-dong{margin-left:auto}
+  .tim{position:relative}
+  .ket-qua{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--vien);border-radius:8px;margin-top:2px;z-index:4;max-height:260px;overflow:auto;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+  .ket-qua div{padding:9px 10px;border-bottom:1px solid #eef1f4;font-size:14px}
+  .ket-qua div.chon{cursor:pointer}
+  .ket-qua div.chon:hover{background:#eef7f5}
+  .ket-qua div.khoa{color:#8a96a3;cursor:not-allowed}
+  .ket-qua div.them{color:var(--chinh);font-weight:600;cursor:pointer}
+  .doan-da-chon{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;background:#eef7f5;border-radius:8px;font-size:14px}
+  .doan-moi{border:1px dashed var(--chinh);border-radius:10px;padding:10px;margin-top:8px}
+  .doan-moi h4{margin:0 0 8px;font-size:14px;color:var(--chinh)}
+  .o-ghi-chu{grid-column:1/-1}
+  .loi-o{font-size:13px;color:var(--loi);margin-top:6px}
+  .thanh-duoi{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--vien);padding:10px 16px;display:flex;gap:10px;justify-content:center;z-index:5}
+  .thanh-duoi button{flex:1;max-width:260px}
+  .goi-y{font-size:12px;color:var(--phu);margin-top:3px}
+  table.bang{border-collapse:collapse;width:100%;font-size:14px}
+  table.bang th,table.bang td{border-bottom:1px solid var(--vien);padding:7px 8px;text-align:left;vertical-align:top}
+  table.bang th{background:#f1f4f6;font-weight:600;white-space:nowrap}
+  td.canh-bao{color:var(--vang);font-weight:600}
+  @media (max-width:520px){ header h1{font-size:16px} .luoi{grid-template-columns:1fr 1fr} .luoi .rong{grid-column:1/-1} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Nhật ký đoàn khách – Du lịch An Lâm</h1>
+  <div class="dong2 an" id="thongtin">
+    <span id="ten"></span><span id="vaitro"></span>
+    <span>Hôm nay đã ghi: <span class="dem" id="demhomnay">0</span> dòng</span>
+    <button class="phu nho" id="nutdangxuat">Đăng xuất</button>
+  </div>
+</header>
+
+<main>
+  <!-- Man hinh 1: dang nhap -->
+  <section id="dangnhap" class="the">
+    <h2>Đăng nhập</h2>
+    <form id="formdangnhap" class="luoi">
+      <div><label for="email">Email</label><input id="email" type="email" autocomplete="username" required></div>
+      <div><label for="matkhau">Mật khẩu</label><input id="matkhau" type="password" autocomplete="current-password" required></div>
+      <button type="submit" id="nutdangnhap">Đăng nhập</button>
+    </form>
+    <div id="loidangnhap" class="thongbao loi an"></div>
+  </section>
+
+  <!-- Sau khi dang nhap -->
+  <section id="khuvuc" class="an">
+    <div id="chuadiemdanh" class="thongbao an" style="margin:0 0 14px;font-weight:600"></div>
+    <div class="the">
+      <h2 id="tieudedoan">Đoàn đang phụ trách</h2>
+      <div id="dsdoan" class="ds-doan"></div>
+    </div>
+    <div id="chixem" class="thongbao vang an"></div>
+    <section id="chuyendoan" class="an" style="margin-top:14px"></section>
+    <div id="bangghi"></div>
+  </section>
+</main>
+
+<div class="thanh-duoi an" id="thanhduoi">
+  <button class="phu" id="nutthemdong">+ Thêm dòng</button>
+  <button id="nutluu">Lưu tất cả</button>
+</div>
+
+<script>
+// Chi dung khoa cong khai (anon). Quyen han do co so du lieu kiem soat.
+const SB_URL = "https://wfpdzaevaggbazuypkhk.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcGR6YWV2YWdnYmF6dXlwa2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUwODYxMjksImV4cCI6MjExMDY2MjEyOX0.nF0r3FZptRlZ6-xvsljx3svKPIP9CvyQbg85SCTaMBs";
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+const LOAI = ["Điểm danh đầu ngày","Sự cố","Chi phí phát sinh","Phản hồi của khách"];
+const HANG_MUC = ["Xe vận chuyển","Khách sạn","Nhà hàng","Điểm tham quan","Sức khỏe khách","Lịch trình","Vé máy bay – tàu"];
+const HM_NCC = ["Xe vận chuyển","Khách sạn","Nhà hàng","Điểm tham quan"];              // su co cac hang muc nay luon can nha cung cap
+const LOAI_NCC = ["Xe vận chuyển","Khách sạn","Nhà hàng","Điểm tham quan","Vé máy bay – tàu"]; // loai nha cung cap
+const canNCC = (loai, hm, md) => loai === "Sự cố" && (HM_NCC.includes(hm) || md === "Nghiêm trọng");
+const MUC_DO = ["Nhẹ","Trung bình","Nghiêm trọng"];
+const TRANG_THAI = ["Đang xử lý","Đã xử lý"];
+const KENH = ["Khách đoàn doanh nghiệp","Đại lý lữ hành","Bán lẻ trực tuyến","Khách quen giới thiệu"];
+const TEN_VAI = {huong_dan_vien:"Hướng dẫn viên", truong_phong:"Trưởng phòng Điều hành tour", quan_tri:"Quản trị viên"};
+
+let toi = null;          // {id, ho_ten, vai_tro}
+let doanCuaToi = [];     // danh sach doan dang phu trach
+let nhaCungCap = [];     // [{id, ten_ncc, hang_muc}]
+let dongs = [];          // cac dong trong bang
+let soDong = 0;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const opt = (ds, rong) => (rong ? `<option value="">${rong}</option>` : "") + ds.map(v => `<option>${esc(v)}</option>`).join("");
+
+function ngayVN(d = new Date()){ return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Ho_Chi_Minh"}).format(d); }
+function gioVN(iso){ return new Date(iso).toLocaleTimeString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh",hour:"2-digit",minute:"2-digit"}); }
+function ngayGioVN(iso){ return new Date(iso).toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}); }
+function ddmm(ymd){ const [y,m,d] = ymd.split("-"); return `${d}/${m}/${y}`; }
+function congNgay(ymd, n){ const d = new Date(ymd + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0,10); }
+
+// Dich loi tu co so du lieu sang tieng Viet de hieu
+function dichLoi(e){
+  const m = (e && (e.message || e.details || "")) + "";
+  const bang = [
+    ["doan_pkey","Mã đoàn này đã có. Hãy tìm và chọn đoàn đó thay vì thêm mới."],
+    ["doan_khong_trung_doan","Đã có đoàn cùng khách hàng, tuyến tour và ngày khởi hành (có thể mang mã khác). Hãy tìm lại đoàn đó."],
+    ["doan_ma_doan_check","Mã đoàn phải có dạng AL-T000."],
+    ["ck_diem_danh_can_so_khach","Điểm danh cần ghi số khách có mặt."],
+    ["ck_su_co_du_thong_tin","Sự cố cần đủ hạng mục, mức độ và trạng thái."],
+    ["ck_su_co_can_nha_cung_cap","Sự cố về xe, khách sạn, nhà hàng, điểm tham quan phải ghi nhà cung cấp."],
+    ["ck_chi_phi_can_so_tien","Chi phí phát sinh cần ghi số tiền (triệu đồng)."],
+    ["ck_chi_phi_khong_am","Chi phí không được âm (trừ dòng điều chỉnh)."],
+    ["ck_chi_phi_tren_2tr_can_duyet","Khoản trên 2 triệu đồng phải ghi tên người duyệt trong ghi chú."],
+    ["ck_dieu_chinh_can_ghi_chu","Dòng điều chỉnh phải có ghi chú."],
+    ["su_co_goc","Sự cố gốc không hợp lệ."],
+    ["nha_cung_cap_hang_muc_check","Loại nhà cung cấp không hợp lệ."],
+    ["ck_rut_khieu_nai","“Khách rút khiếu nại” chỉ ghi trên dòng Đã xử lý của một sự cố đã báo, ghi chú phải có “rút khiếu nại”."],
+    ["Chỉ quản trị viên","Chỉ quản trị viên được thực hiện việc này."],
+    ["Người nhận phải","Người nhận phải là hướng dẫn viên còn làm việc, khác người chuyển đi."],
+    ["Phải nhập lý do","Phải nhập lý do chuyển."],
+    ["không còn đoàn","Người này không còn đoàn đang đi hoặc sắp khởi hành để chuyển."],
+    ["row-level security","Bạn không có quyền ghi cho đoàn này."],
+    ["permission denied","Bạn không có quyền thực hiện thao tác này."],
+    ["Failed to fetch","Mất kết nối mạng. Kiểm tra mạng rồi bấm Lưu lại."],
+  ];
+  for (const [k,v] of bang) if (m.includes(k)) return v;
+  return "Không lưu được: " + m;
+}
+
+// ---------- Dang nhap ----------
+$("formdangnhap").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  $("loidangnhap").classList.add("an");
+  $("nutdangnhap").disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("matkhau").value });
+  $("nutdangnhap").disabled = false;
+  if (error){
+    $("loidangnhap").textContent = /Invalid login/i.test(error.message) ? "Sai email hoặc mật khẩu."
+      : /banned/i.test(error.message) ? "Tài khoản đã bị khóa (nhân viên đã nghỉ việc). Liên hệ quản trị viên." : dichLoi(error);
+    $("loidangnhap").classList.remove("an");
+    return;
+  }
+  await vaoTrang();
+});
+$("nutdangxuat").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
+
+async function vaoTrang(){
+  const { data:{ user } } = await sb.auth.getUser();
+  if (!user) return;
+  const { data, error } = await sb.from("nguoi_dung").select("id,ho_ten,vai_tro").eq("id", user.id).maybeSingle();
+  if (error || !data){
+    await sb.auth.signOut();
+    $("loidangnhap").textContent = "Tài khoản đã bị khóa hoặc chưa được cấp quyền. Liên hệ quản trị viên.";
+    $("loidangnhap").classList.remove("an");
+    return;
+  }
+  toi = data;
+  $("dangnhap").classList.add("an");
+  $("khuvuc").classList.remove("an");
+  $("thongtin").classList.remove("an");
+  $("ten").textContent = toi.ho_ten;
+  $("vaitro").textContent = "· " + (TEN_VAI[toi.vai_tro] || toi.vai_tro);
+  await Promise.all([taiDoan(), taiNhaCungCap(), demHomNay(), nhacDiemDanh()]);
+
+  if (toi.vai_tro === "huong_dan_vien"){
+    $("thanhduoi").classList.remove("an");
+    for (let i = 0; i < 3; i++) themDong();
+  } else {
+    $("chixem").textContent = "Tài khoản của bạn chỉ xem dữ liệu, không ghi nhật ký. Việc ghi nhật ký do hướng dẫn viên phụ trách đoàn thực hiện.";
+    $("chixem").classList.remove("an");
+  }
+  if (toi.vai_tro === "quan_tri") await moChuyenDoan();
+}
+
+// ---------- Man hinh Chuyen doan (chi quan tri vien) ----------
+let nhanVien = [];          // danh sach nhan vien (quan tri vien xem duoc toan bo)
+let daXemTruoc = null;      // ket qua xem truoc hop le hien tai
+
+async function moChuyenDoan(){
+  const box = $("chuyendoan");
+  box.innerHTML = `
+    <div class="the">
+      <h2>Chuyển đoàn</h2>
+      <div class="goi-y" style="margin-bottom:10px">Chuyển các đoàn <b>đang đi và sắp khởi hành</b> của người nghỉ sang người nhận. Đoàn đã kết thúc giữ nguyên người phụ trách; nhật ký cũ giữ nguyên người ghi. Mỗi lần chuyển được ghi vào lịch sử, không sửa, không xóa.</div>
+      <div class="luoi">
+        <div class="rong"><label>Người nghỉ / chuyển đi</label><select id="cd-tu"></select></div>
+        <div class="rong"><label>Số người nhận</label>
+          <select id="cd-so"><option value="1">Một người nhận toàn bộ</option><option value="2">Hai người, chia xen kẽ theo ngày khởi hành</option></select></div>
+        <div><label>Người nhận 1</label><select id="cd-nhan1"></select></div>
+        <div id="o-cd-nhan2" class="an"><label>Người nhận 2</label><select id="cd-nhan2"></select></div>
+        <div class="rong"><label>Người quyết định (trưởng phòng điều hành)</label><select id="cd-qd"></select></div>
+        <div class="o-ghi-chu"><label>Lý do chuyển</label><textarea id="cd-lydo" placeholder="VD: Huỳnh Tấn Phát nghỉ việc từ 19/11/2026 theo thông báo của Phòng Nhân sự"></textarea></div>
+      </div>
+      <div id="cd-khoa" class="thongbao vang an"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+        <button class="phu" id="cd-xem" type="button">Xem trước</button>
+        <button id="cd-xacnhan" type="button" disabled>Xác nhận chuyển</button>
+      </div>
+      <div id="cd-ketqua"></div>
+    </div>
+    <div class="the">
+      <h2>Lịch sử chuyển đoàn</h2>
+      <div id="cd-lichsu" style="overflow-x:auto"></div>
+    </div>`;
+  box.classList.remove("an");
+
+  const { data } = await sb.from("nguoi_dung").select("id,ho_ten,vai_tro,dang_hoat_dong,trang_thai_lam_viec,ngay_nghi").order("ho_ten");
+  nhanVien = data || [];
+  const hdv = nhanVien.filter(n => n.vai_tro === "huong_dan_vien");
+  const daNghi = hdv.filter(n => n.trang_thai_lam_viec === "da_nghi");
+  $("cd-tu").innerHTML = hdv.map(n => `<option value="${n.id}">${esc(n.ho_ten)}${n.trang_thai_lam_viec === "da_nghi" ? " (đã nghỉ " + (n.ngay_nghi ? ddmm(n.ngay_nghi) : "") + ")" : ""}</option>`).join("");
+  if (daNghi.length) $("cd-tu").value = daNghi[0].id;
+  $("cd-qd").innerHTML = nhanVien.filter(n => n.vai_tro === "truong_phong").map(n => `<option value="${n.id}">${esc(n.ho_ten)}</option>`).join("");
+  napNguoiNhan();
+
+  ["cd-tu","cd-so","cd-nhan1","cd-nhan2","cd-qd"].forEach(id => $(id).addEventListener("change", () => { if (id === "cd-tu" || id === "cd-so") napNguoiNhan(); boXemTruoc(); }));
+  $("cd-lydo").addEventListener("input", capNutXacNhan);
+  $("cd-xem").addEventListener("click", xemTruocChuyen);
+  $("cd-xacnhan").addEventListener("click", xacNhanChuyen);
+  await taiLichSuChuyen();
+}
+
+function napNguoiNhan(){
+  const tu = $("cd-tu").value;
+  const conLam = nhanVien.filter(n => n.vai_tro === "huong_dan_vien" && n.id !== tu && n.dang_hoat_dong && n.trang_thai_lam_viec === "con_lam");
+  const giu1 = $("cd-nhan1").value, giu2 = $("cd-nhan2").value;
+  const ops = conLam.map(n => `<option value="${n.id}">${esc(n.ho_ten)}</option>`).join("");
+  $("cd-nhan1").innerHTML = ops; $("cd-nhan2").innerHTML = ops;
+  const macDinh = conLam.find(n => n.ho_ten === "Võ Thị Diễm");      // nguoi nhan da chot: Vo Thi Diem
+  $("cd-nhan1").value = conLam.some(n => n.id === giu1) ? giu1 : (macDinh ? macDinh.id : (conLam[0] || {}).id);
+  const khac = conLam.find(n => n.id !== $("cd-nhan1").value);
+  $("cd-nhan2").value = conLam.some(n => n.id === giu2) && giu2 !== $("cd-nhan1").value ? giu2 : (khac || {}).id;
+  $("o-cd-nhan2").classList.toggle("an", $("cd-so").value !== "2");
+
+  // Nguoi chuyen di con lam viec: cho phep danh dau da nghi va khoa dang nhap
+  const nv = nhanVien.find(n => n.id === tu);
+  const k = $("cd-khoa");
+  if (nv && nv.trang_thai_lam_viec === "con_lam"){
+    k.innerHTML = `${esc(nv.ho_ten)} vẫn đang làm việc và đăng nhập được. Nếu đã nghỉ việc: <button class="phu nho" id="cd-nutkhoa" type="button">Đánh dấu đã nghỉ và khóa đăng nhập</button>`;
+    k.classList.remove("an");
+    $("cd-nutkhoa").addEventListener("click", () => khoaTaiKhoan(nv));
+  } else if (nv){
+    k.textContent = `${nv.ho_ten} đã nghỉ việc${nv.ngay_nghi ? " từ " + ddmm(nv.ngay_nghi) : ""}, tài khoản đã bị khóa đăng nhập. Nhật ký cũ vẫn giữ nguyên.`;
+    k.classList.remove("an");
+  }
+}
+
+function nguoiNhanDaChon(){
+  const a = [$("cd-nhan1").value];
+  if ($("cd-so").value === "2") a.push($("cd-nhan2").value);
+  return a.filter(Boolean);
+}
+
+function boXemTruoc(){ daXemTruoc = null; $("cd-ketqua").innerHTML = ""; capNutXacNhan(); }
+function capNutXacNhan(){
+  const n = daXemTruoc ? daXemTruoc.length : 0;
+  $("cd-xacnhan").disabled = !(n > 0 && $("cd-lydo").value.trim());
+  $("cd-xacnhan").textContent = n ? `Xác nhận chuyển ${n} đoàn` : "Xác nhận chuyển";
+}
+
+async function xemTruocChuyen(){
+  boXemTruoc();
+  const nhan = nguoiNhanDaChon();
+  if ($("cd-so").value === "2" && nhan[0] === nhan[1]){ $("cd-ketqua").innerHTML = `<div class="thongbao loi">Hai người nhận phải khác nhau.</div>`; return; }
+  const { data, error } = await sb.rpc("xem_truoc_chuyen_doan", { p_tu: $("cd-tu").value, p_nhan: nhan });
+  if (error){ $("cd-ketqua").innerHTML = `<div class="thongbao loi">${esc(dichLoi(error))}</div>`; return; }
+  if (!data.length){ $("cd-ketqua").innerHTML = `<div class="thongbao ok">Người này không còn đoàn đang đi hoặc sắp khởi hành. Không có gì để chuyển.</div>`; return; }
+  daXemTruoc = data;
+  const trung = data.filter(r => r.trung_lich).length;
+  const demTheoNguoi = {};
+  data.forEach(r => demTheoNguoi[r.ten_nguoi_nhan] = (demTheoNguoi[r.ten_nguoi_nhan] || 0) + 1);
+  $("cd-ketqua").innerHTML = `
+    <div class="thongbao vang"><b>Sẽ chuyển ${data.length} đoàn</b>: ${Object.entries(demTheoNguoi).map(([t,n]) => esc(t) + " nhận " + n).join("; ")}.
+      ${trung ? `<br>⚠ ${trung} đoàn trùng lịch với đoàn người nhận đang phụ trách. Trưởng phòng cần xác nhận người nhận dẫn được.` : ""}</div>
+    <div style="overflow-x:auto;margin-top:8px"><table class="bang">
+      <tr><th>Mã đoàn</th><th>Tuyến tour</th><th>Ngày</th><th>Tình trạng</th><th>Người nhận</th><th>Trùng lịch</th></tr>
+      ${data.map(r => `<tr><td><b>${esc(r.ma_doan)}</b></td><td>${esc(r.tuyen_tour)}</td><td>${ddmm(r.ngay_khoi_hanh).slice(0,5)}–${ddmm(r.ngay_ket_thuc).slice(0,5)}</td>
+        <td>${esc(r.tinh_trang)}</td><td>${esc(r.ten_nguoi_nhan)}</td><td class="${r.trung_lich ? "canh-bao" : ""}">${r.trung_lich ? "⚠ " + esc(r.trung_lich) : "Không"}</td></tr>`).join("")}
+    </table></div>`;
+  capNutXacNhan();
+}
+
+async function xacNhanChuyen(){
+  if (!daXemTruoc || !daXemTruoc.length) return;
+  const lyDo = $("cd-lydo").value.trim();
+  if (!lyDo){ alert("Phải nhập lý do chuyển."); return; }
+  const tu = nhanVien.find(n => n.id === $("cd-tu").value);
+  if (!confirm(`Chuyển ${daXemTruoc.length} đoàn của ${tu ? tu.ho_ten : ""}?\nViệc chuyển được ghi vào lịch sử và không thể xóa.`)) return;
+  const nut = $("cd-xacnhan"); nut.disabled = true; nut.textContent = "Đang chuyển…";
+  const { data, error } = await sb.rpc("chuyen_doan", { p_tu: $("cd-tu").value, p_nhan: nguoiNhanDaChon(), p_nguoi_quyet_dinh: $("cd-qd").value, p_ly_do: lyDo });
+  daXemTruoc = null; capNutXacNhan();
+  if (error){ $("cd-ketqua").innerHTML = `<div class="thongbao loi">${esc(dichLoi(error))}</div>`; return; }
+  $("cd-ketqua").innerHTML = `<div class="thongbao ok">✓ Đã chuyển ${data.length} đoàn: ${data.map(r => esc(r.ma_doan) + " → " + esc(r.ten_nguoi_nhan)).join(", ")}.</div>`;
+  $("cd-lydo").value = "";
+  await Promise.all([taiLichSuChuyen(), taiDoan(), nhacDiemDanh()]);
+}
+
+async function khoaTaiKhoan(nv){
+  if (!confirm(`Đánh dấu ${nv.ho_ten} đã nghỉ việc và khóa đăng nhập ngay?\nNhật ký và đoàn đã kết thúc của người này vẫn giữ nguyên.`)) return;
+  const { error } = await sb.rpc("khoa_tai_khoan_nghi_viec", { p_id: nv.id, p_ngay_nghi: ngayVN() });
+  if (error){ alert(dichLoi(error)); return; }
+  const { data } = await sb.from("nguoi_dung").select("id,ho_ten,vai_tro,dang_hoat_dong,trang_thai_lam_viec,ngay_nghi").order("ho_ten");
+  nhanVien = data || [];
+  const giu = $("cd-tu").value;
+  $("cd-tu").innerHTML = nhanVien.filter(n => n.vai_tro === "huong_dan_vien").map(n => `<option value="${n.id}">${esc(n.ho_ten)}${n.trang_thai_lam_viec === "da_nghi" ? " (đã nghỉ " + (n.ngay_nghi ? ddmm(n.ngay_nghi) : "") + ")" : ""}</option>`).join("");
+  $("cd-tu").value = giu;
+  napNguoiNhan(); boXemTruoc();
+}
+
+async function taiLichSuChuyen(){
+  const { data, error } = await sb.from("lich_su_chuyen_doan").select("thoi_diem,ma_doan,tu_hdv,sang_hdv,nguoi_quyet_dinh,nguoi_thuc_hien,ly_do").order("thoi_diem",{ascending:false}).limit(200);
+  const ten = id => esc((nhanVien.find(n => n.id === id) || {}).ho_ten || "?");
+  const box = $("cd-lichsu");
+  if (error){ box.innerHTML = `<div class="thongbao loi">${esc(dichLoi(error))}</div>`; return; }
+  if (!data.length){ box.innerHTML = `<div class="goi-y">Chưa có lần chuyển nào.</div>`; return; }
+  box.innerHTML = `<table class="bang"><tr><th>Ngày giờ</th><th>Mã đoàn</th><th>Từ</th><th>Sang</th><th>Người quyết định</th><th>Người thực hiện</th><th>Lý do</th></tr>
+    ${data.map(r => `<tr><td>${ngayGioVN(r.thoi_diem)}</td><td><b>${esc(r.ma_doan)}</b></td><td>${ten(r.tu_hdv)}</td><td>${ten(r.sang_hdv)}</td><td>${ten(r.nguoi_quyet_dinh)}</td><td>${ten(r.nguoi_thuc_hien)}</td><td>${esc(r.ly_do)}</td></tr>`).join("")}</table>`;
+}
+
+async function demHomNay(){
+  const tu = ngayVN() + "T00:00:00+07:00";
+  const { count } = await sb.from("nhat_ky").select("id", { count:"exact", head:true }).eq("nguoi_ghi", toi.id).gte("thoi_diem_ghi", tu);
+  $("demhomnay").textContent = count ?? 0;
+}
+
+// Nhac diem danh: doan dang di hom nay ma chua co dong "Diem danh dau ngay"
+async function nhacDiemDanh(){
+  let q = sb.from("v_diem_danh_hom_nay").select("ma_doan,tuyen_tour,ten_hdv,da_diem_danh").eq("da_diem_danh", false).order("ma_doan");
+  if (toi.vai_tro === "huong_dan_vien") q = q.eq("hdv_phu_trach", toi.id);
+  const { data } = await q;
+  const box = $("chuadiemdanh");
+  if (!data || !data.length){ box.classList.add("an"); return; }
+  const quaGio = new Date().toLocaleTimeString("en-GB",{timeZone:"Asia/Ho_Chi_Minh",hour12:false}) >= "09:00";
+  const ds = data.map(r => `${esc(r.ma_doan)} (${esc(r.tuyen_tour)}${toi.vai_tro === "huong_dan_vien" ? "" : " – " + esc(r.ten_hdv)})`).join(", ");
+  box.innerHTML = (toi.vai_tro === "huong_dan_vien" ? "Đoàn của anh/chị hôm nay chưa điểm danh: " : "Đoàn đang đi chưa điểm danh hôm nay: ")
+    + ds + (quaGio ? " — đã quá 9 giờ sáng." : " — cần điểm danh trước 9 giờ.");
+  box.className = "thongbao " + (quaGio ? "loi" : "vang");
+}
+
+async function taiDoan(){
+  const homnay = ngayVN();
+  let q = sb.from("doan").select("ma_doan,khach_hang,tuyen_tour,ngay_khoi_hanh,so_ngay,so_khach").order("ngay_khoi_hanh");
+  if (toi.vai_tro === "huong_dan_vien") q = q.eq("hdv_phu_trach", toi.id);
+  else q = q.gte("ngay_khoi_hanh", congNgay(homnay, -10)).lte("ngay_khoi_hanh", congNgay(homnay, 10));
+  const { data } = await q;
+  doanCuaToi = (data || []).map(d => {
+    const ket = congNgay(d.ngay_khoi_hanh, d.so_ngay - 1);
+    d.tinh = homnay < d.ngay_khoi_hanh ? "sap" : homnay > ket ? "xong" : "di";
+    return d;
+  });
+  $("tieudedoan").textContent = toi.vai_tro === "huong_dan_vien" ? "Đoàn đang phụ trách" : "Đoàn khởi hành trong 10 ngày trước và sau hôm nay";
+  const hien = doanCuaToi.filter(d => d.tinh !== "xong");
+  const nhan = {di:'<span class="nhan di">Đang đi</span>', sap:'<span class="nhan sap">Sắp khởi hành</span>', xong:'<span class="nhan xong">Đã kết thúc</span>'};
+  $("dsdoan").innerHTML = hien.length ? hien.map(d =>
+    `<div class="doan-muc"><b>${esc(d.ma_doan)}</b>${nhan[d.tinh]}<span>${esc(d.tuyen_tour)}</span><span>${esc(d.khach_hang)}</span><span>${ddmm(d.ngay_khoi_hanh)} · ${d.so_ngay} ngày · ${d.so_khach} khách</span></div>`
+  ).join("") : '<div class="goi-y">Hiện không có đoàn nào đang đi hoặc sắp khởi hành.</div>';
+}
+
+async function taiNhaCungCap(){
+  const { data } = await sb.from("nha_cung_cap").select("id,ten_ncc,hang_muc").order("ten_ncc");
+  nhaCungCap = data || [];
+  let dl = $("ds-ncc");
+  if (!dl){ dl = document.createElement("datalist"); dl.id = "ds-ncc"; document.body.appendChild(dl); }
+  dl.innerHTML = nhaCungCap.map(n => `<option value="${esc(n.ten_ncc)}">${esc(n.hang_muc)}</option>`).join("");
+}
+
+// ---------- Bang ghi nhieu dong ----------
+function themDong(){
+  soDong++;
+  const id = soDong;
+  const el = document.createElement("div");
+  el.className = "the dong";
+  el.innerHTML = `
+    <div class="dau-dong"><h3>Dòng ${id}</h3><span class="trang-thai-dong"></span>
+      <button class="phu nho xoa-dong" type="button">Bỏ dòng</button></div>
+    <div class="khu-doan">
+      <div class="tim">
+        <label>Đoàn (gõ mã đoàn, tên khách hàng hoặc tuyến tour)</label>
+        <input class="o-tim" placeholder="VD: AL-T007, Thép Việt Á, Hà Giang" autocomplete="off">
+        <div class="ket-qua an"></div>
+      </div>
+      <div class="doan-da-chon an"></div>
+      <div class="doan-moi an">
+        <h4>Thêm đoàn mới</h4>
+        <div class="luoi">
+          <div><label>Mã đoàn</label><input class="m-ma" placeholder="AL-T000"></div>
+          <div class="rong"><label>Khách hàng</label><input class="m-khach"></div>
+          <div class="rong"><label>Tuyến tour</label><input class="m-tuyen"></div>
+          <div><label>Ngày khởi hành</label><input class="m-ngay" type="date"></div>
+          <div><label>Số ngày</label><input class="m-songay" type="number" min="1" inputmode="numeric"></div>
+          <div><label>Số khách</label><input class="m-sokhach" type="number" min="1" inputmode="numeric"></div>
+          <div class="rong"><label>Kênh bán</label><select class="m-kenh">${opt(KENH,"— Chọn kênh bán —")}</select></div>
+        </div>
+        <button class="phu nho huy-moi" type="button" style="margin-top:8px">Hủy thêm đoàn</button>
+      </div>
+    </div>
+    <div class="luoi" style="margin-top:10px">
+      <div class="rong"><label>Loại ghi nhận</label><select class="f-loai">${opt(LOAI,"— Chọn loại —")}</select></div>
+      <div class="rong o-goc an"><label>Sự cố này là</label><select class="f-goc"><option value="">Báo sự cố mới</option></select>
+        <div class="goi-y">Đổi trạng thái sự cố đã báo thì chọn sự cố đó, hệ thống ghi thành dòng mới.</div>
+        <label class="o-rut an" style="margin-top:6px;color:var(--chu)"><input class="f-rut" type="checkbox" style="width:auto;margin-right:6px">Khách rút khiếu nại (sự cố vẫn tính cho nhà cung cấp, không trừ điểm hướng dẫn viên)</label></div>
+      <div class="o-hm"><label>Hạng mục</label><select class="f-hm">${opt(HANG_MUC,"— Hạng mục —")}</select></div>
+      <div class="o-md"><label>Mức độ</label><select class="f-md">${opt(MUC_DO,"— Mức độ —")}</select></div>
+      <div class="rong o-ncc an"><label>Nhà cung cấp liên quan</label><input class="f-ncc" list="ds-ncc" placeholder="Gõ để tìm, chưa có thì gõ tên mới" autocomplete="off">
+        <div class="goi-y">Bắt buộc với sự cố Nghiêm trọng và sự cố về xe, khách sạn, nhà hàng, điểm tham quan.</div></div>
+      <div class="rong o-loaincc an"><label>Loại nhà cung cấp (nhà cung cấp mới)</label><select class="f-loaincc">${opt(LOAI_NCC,"— Chọn loại —")}</select></div>
+      <div class="o-sk an"><label>Số khách có mặt</label><input class="f-sk" type="number" min="0" inputmode="numeric"></div>
+      <div class="o-cp an"><label>Chi phí (triệu đồng)</label><input class="f-cp" type="number" step="0.001" inputmode="decimal" placeholder="VD: 1.5"></div>
+      <div class="o-tt an"><label>Trạng thái</label><select class="f-tt">${opt(TRANG_THAI,"— Trạng thái —")}</select></div>
+      <div class="rong"><label><input class="f-dc" type="checkbox" style="width:auto;margin-right:6px">Dòng điều chỉnh (sửa dòng ghi nhầm)</label>
+        <select class="f-dcdong an"><option value="">— Chọn dòng bị ghi nhầm —</option></select></div>
+      <div class="o-ghi-chu"><label>Ghi chú</label><textarea class="f-gc" placeholder="Khoản chi trên 2 triệu: ghi “Người duyệt: …”"></textarea></div>
+    </div>
+    <div class="loi-o an"></div>`;
+  $("bangghi").appendChild(el);
+  const d = { id, el, doan:null, moi:false, daLuu:false, suCoMo:[] };
+  dongs.push(d);
+  ganSuKien(d);
+  capNhatHienThi(d);
+  return d;
+}
+
+function q(d, cls){ return d.el.querySelector("." + cls); }
+
+function ganSuKien(d){
+  const oTim = q(d,"o-tim"), kq = q(d,"ket-qua");
+  let hen;
+  oTim.addEventListener("input", () => {
+    clearTimeout(hen);
+    const tu = oTim.value.trim();
+    if (tu.length < 2){ kq.classList.add("an"); return; }
+    hen = setTimeout(() => timDoan(d, tu), 300);
+  });
+  oTim.addEventListener("blur", () => setTimeout(() => kq.classList.add("an"), 200));
+  q(d,"huy-moi").addEventListener("click", () => { d.moi = false; q(d,"doan-moi").classList.add("an"); q(d,"tim").classList.remove("an"); });
+  q(d,"xoa-dong").addEventListener("click", () => { d.el.remove(); dongs = dongs.filter(x => x !== d); });
+  q(d,"f-loai").addEventListener("change", () => capNhatHienThi(d));
+  q(d,"f-hm").addEventListener("change", () => capNhatHienThi(d));
+  q(d,"f-md").addEventListener("change", () => capNhatHienThi(d));
+  q(d,"f-ncc").addEventListener("input", () => capNhatHienThi(d));
+  q(d,"f-goc").addEventListener("change", () => {
+    const g = d.suCoMo.find(s => String(s.id) === q(d,"f-goc").value);
+    if (g){
+      q(d,"f-hm").value = g.hang_muc; q(d,"f-md").value = g.muc_do;
+      const n = nhaCungCap.find(x => x.id === g.nha_cung_cap_id); q(d,"f-ncc").value = n ? n.ten_ncc : "";
+      q(d,"f-tt").value = "Đã xử lý";
+      q(d,"f-rut").checked = !!g.xong;   // su co da xu ly: chi con ly do ghi them la khach rut khieu nai
+      if (g.xong && !/rút khiếu nại/i.test(q(d,"f-gc").value)) q(d,"f-gc").value = ("Khách rút khiếu nại. " + q(d,"f-gc").value).trim();
+    } else q(d,"f-rut").checked = false;
+    capNhatHienThi(d);
+  });
+  q(d,"f-rut").addEventListener("change", () => {
+    if (q(d,"f-rut").checked){
+      q(d,"f-tt").value = "Đã xử lý";
+      const gc = q(d,"f-gc");
+      if (!/rút khiếu nại/i.test(gc.value)) gc.value = ("Khách rút khiếu nại. " + gc.value).trim();
+    }
+    capNhatHienThi(d);
+  });
+  q(d,"f-dc").addEventListener("change", () => q(d,"f-dcdong").classList.toggle("an", !q(d,"f-dc").checked));
+}
+
+function capNhatHienThi(d){
+  const loai = q(d,"f-loai").value, hm = q(d,"f-hm").value, md = q(d,"f-md").value, coGoc = !!q(d,"f-goc").value;
+  const suCo = loai === "Sự cố";
+  const goc = coGoc ? d.suCoMo.find(s => String(s.id) === q(d,"f-goc").value) : null;
+  const tenNcc = q(d,"f-ncc").value.trim();
+  const nccMoi = tenNcc && !nhaCungCap.some(n => n.ten_ncc.trim().toLowerCase() === tenNcc.toLowerCase());
+  const hienNcc = suCo && (HM_NCC.includes(hm) || md === "Nghiêm trọng" || !!tenNcc);
+  q(d,"o-goc").classList.toggle("an", !suCo || !d.doan);
+  q(d,"o-rut").classList.toggle("an", !(suCo && coGoc));
+  q(d,"f-tt").disabled = d.daLuu || (suCo && q(d,"f-rut").checked);
+  q(d,"o-sk").classList.toggle("an", loai !== "Điểm danh đầu ngày");
+  q(d,"o-cp").classList.toggle("an", loai !== "Chi phí phát sinh");
+  q(d,"o-tt").classList.toggle("an", !suCo);
+  q(d,"o-ncc").classList.toggle("an", !hienNcc);
+  q(d,"o-loaincc").classList.toggle("an", !(hienNcc && nccMoi && !LOAI_NCC.includes(hm)));
+  q(d,"o-hm").classList.toggle("an", loai === "Điểm danh đầu ngày");
+  q(d,"o-md").classList.toggle("an", loai === "Điểm danh đầu ngày" || loai === "Chi phí phát sinh");
+  // Cap nhat su co da bao: giu nguyen hang muc, muc do; nha cung cap chi khoa khi su co goc da co
+  ["f-hm","f-md"].forEach(c => q(d,c).disabled = d.daLuu || (suCo && coGoc));
+  q(d,"f-ncc").disabled = d.daLuu || (suCo && !!goc && !!goc.nha_cung_cap_id);
+}
+
+async function timDoan(d, tu){
+  const kq = q(d,"ket-qua");
+  const { data, error } = await sb.rpc("tim_doan", { tu_khoa: tu });
+  if (error){ kq.innerHTML = `<div class="khoa">${esc(dichLoi(error))}</div>`; kq.classList.remove("an"); return; }
+  let html = (data || []).map((r, i) => r.cua_toi
+    ? `<div class="chon" data-i="${i}"><b>${esc(r.ma_doan)}</b> · ${esc(r.tuyen_tour)} · ${esc(r.khach_hang)} · ${ddmm(r.ngay_khoi_hanh)}</div>`
+    : `<div class="khoa"><b>${esc(r.ma_doan)}</b> · ${esc(r.tuyen_tour)} · Do ${esc(r.nguoi_phu_trach)} phụ trách – không ghi được</div>`).join("");
+  html += `<div class="them">+ Không thấy đoàn của bạn? Thêm đoàn mới</div>`;
+  kq.innerHTML = html;
+  kq.classList.remove("an");
+  kq.querySelectorAll(".chon").forEach(x => x.addEventListener("mousedown", () => chonDoan(d, data[+x.dataset.i])));
+  kq.querySelectorAll(".them").forEach(x => x.addEventListener("mousedown", () => moThemDoan(d, tu)));
+}
+
+async function chonDoan(d, r){
+  d.doan = r; d.moi = false;
+  q(d,"tim").classList.add("an"); q(d,"doan-moi").classList.add("an");
+  const box = q(d,"doan-da-chon");
+  box.innerHTML = `<b>${esc(r.ma_doan)}</b><span>${esc(r.tuyen_tour)} · ${esc(r.khach_hang || "")}</span>` + (d.daLuu ? "" : `<button class="phu nho" type="button">Đổi đoàn</button>`);
+  box.classList.remove("an");
+  const nut = box.querySelector("button");
+  if (nut) nut.addEventListener("click", () => { d.doan = null; box.classList.add("an"); q(d,"tim").classList.remove("an"); q(d,"o-tim").value = ""; capNhatHienThi(d); });
+  await taiThongTinDoan(d);
+  capNhatHienThi(d);
+}
+
+function moThemDoan(d, tu){
+  d.moi = true; d.doan = null;
+  q(d,"tim").classList.add("an"); q(d,"doan-moi").classList.remove("an");
+  const ma = tu.toUpperCase().replace(/\s+/g,"-");
+  if (/^AL-T\d{3}$/.test(ma)) q(d,"m-ma").value = ma;
+  capNhatHienThi(d);
+}
+
+// Tai su co dang mo va cac dong gan day cua doan (de cap nhat su co, dieu chinh)
+async function taiThongTinDoan(d){
+  const ma = d.doan.ma_doan;
+  const [{ data: goc }, { data: dong }, { data: ganday }] = await Promise.all([
+    sb.from("nhat_ky").select("id,hang_muc,muc_do,ghi_chu,thoi_diem_ghi,nha_cung_cap_id,trang_thai").eq("ma_doan", ma).eq("loai_ghi_nhan","Sự cố").is("su_co_goc", null).order("thoi_diem_ghi",{ascending:false}),
+    sb.from("nhat_ky").select("su_co_goc,khach_rut_khieu_nai").eq("ma_doan", ma).eq("trang_thai","Đã xử lý").not("su_co_goc","is",null),
+    sb.from("nhat_ky").select("id,loai_ghi_nhan,thoi_diem_ghi,chi_phi_trieu_dong,so_khach_co_mat,ghi_chu").eq("ma_doan", ma).order("thoi_diem_ghi",{ascending:false}).limit(30),
+  ]);
+  const daXong = new Set((dong || []).map(x => x.su_co_goc));
+  const daRut = new Set((dong || []).filter(x => x.khach_rut_khieu_nai).map(x => x.su_co_goc));
+  // Moi su co cua doan: dang mo de cap nhat; da xu ly (chua rut) de ghi khach rut khieu nai
+  d.suCoMo = (goc || []).filter(g => !daRut.has(g.id)).map(g => ({ ...g, xong: daXong.has(g.id) || g.trang_thai === "Đã xử lý" }));
+  const nhan = g => `${esc(g.hang_muc)} · ${esc(g.muc_do)} · ${ngayGioVN(g.thoi_diem_ghi)} – ${esc((g.ghi_chu || "").slice(0,40))}`;
+  q(d,"f-goc").innerHTML = `<option value="">Báo sự cố mới</option>`
+    + d.suCoMo.filter(g => !g.xong).map(g => `<option value="${g.id}">Cập nhật: ${nhan(g)}</option>`).join("")
+    + d.suCoMo.filter(g => g.xong).map(g => `<option value="${g.id}">Đã xử lý – ghi khách rút khiếu nại: ${nhan(g)}</option>`).join("");
+  q(d,"f-dcdong").innerHTML = `<option value="">— Chọn dòng bị ghi nhầm —</option>` + (ganday || []).map(g =>
+    `<option value="${g.id}">#${g.id} · ${ngayGioVN(g.thoi_diem_ghi)} · ${esc(g.loai_ghi_nhan)}${g.chi_phi_trieu_dong != null ? " · " + g.chi_phi_trieu_dong + " tr" : ""}${g.so_khach_co_mat != null ? " · " + g.so_khach_co_mat + " khách" : ""}</option>`).join("");
+}
+
+// ---------- Kiem tra & luu ----------
+function dongTrong(d){
+  return !d.doan && !d.moi && !q(d,"f-loai").value && !q(d,"f-gc").value.trim();
+}
+
+function kiemTra(d){
+  const L = [];
+  const v = c => q(d,c).value.trim();
+  let moi = null;
+  if (d.moi){
+    moi = { ma_doan: v("m-ma").toUpperCase(), khach_hang: v("m-khach"), tuyen_tour: v("m-tuyen"), ngay_khoi_hanh: v("m-ngay"),
+            so_ngay: +v("m-songay"), so_khach: +v("m-sokhach"), kenh_ban: v("m-kenh"), hdv_phu_trach: toi.id };
+    if (!/^AL-T\d{3}$/.test(moi.ma_doan)) L.push("Mã đoàn phải có dạng AL-T000.");
+    if (!moi.khach_hang) L.push("Thiếu tên khách hàng.");
+    if (!moi.tuyen_tour) L.push("Thiếu tuyến tour.");
+    if (!moi.ngay_khoi_hanh) L.push("Thiếu ngày khởi hành.");
+    if (!(moi.so_ngay > 0)) L.push("Số ngày phải lớn hơn 0.");
+    if (!(moi.so_khach > 0)) L.push("Số khách phải lớn hơn 0.");
+    if (!moi.kenh_ban) L.push("Chưa chọn kênh bán.");
+  } else if (!d.doan) L.push("Chưa chọn đoàn.");
+
+  const loai = v("f-loai"), hm = v("f-hm"), md = v("f-md"), tt = v("f-tt"), gc = v("f-gc");
+  const dc = q(d,"f-dc").checked, dcDong = v("f-dcdong"), goc = v("f-goc");
+  const ban = { loai_ghi_nhan: loai, ghi_chu: gc || null, hang_muc: null, muc_do: null, trang_thai: null,
+                so_khach_co_mat: null, chi_phi_trieu_dong: null, su_co_goc: null, dieu_chinh_cho: null, ten_ncc: null };
+  if (!loai) L.push("Chưa chọn loại ghi nhận.");
+  if (loai === "Điểm danh đầu ngày"){
+    const sk = v("f-sk");
+    if (sk === "" || !(+sk >= 0) || !Number.isInteger(+sk)) L.push("Điểm danh cần ghi số khách có mặt (số nguyên).");
+    else {
+      ban.so_khach_co_mat = +sk;
+      const dn = d.doan && doanCuaToi.find(x => x.ma_doan === d.doan.ma_doan);
+      const tong = dn ? dn.so_khach : moi ? moi.so_khach : null;
+      if (tong && +sk > tong) L.push(`Số khách có mặt (${sk}) lớn hơn số khách của đoàn (${tong}).`);
+    }
+  }
+  if (loai === "Sự cố"){
+    if (!hm) L.push("Sự cố cần chọn hạng mục.");
+    if (!md) L.push("Sự cố cần chọn mức độ.");
+    if (!tt) L.push("Sự cố cần chọn trạng thái.");
+    if (goc && tt === "Đang xử lý") L.push("Cập nhật sự cố đã báo thì trạng thái phải là “Đã xử lý”.");
+    const g = goc ? d.suCoMo.find(s => String(s.id) === goc) : null;
+    const rut = !!goc && q(d,"f-rut").checked;
+    if (g && g.xong && !rut) L.push("Sự cố này đã xử lý. Chỉ ghi thêm khi khách rút khiếu nại (đánh dấu ô bên dưới).");
+    if (rut && !/rút khiếu nại/i.test(gc)) L.push("Ghi chú phải có “khách rút khiếu nại”.");
+    ban.khach_rut_khieu_nai = rut;
+    const n = v("f-ncc");
+    if (!(g && g.nha_cung_cap_id)){
+      if (canNCC(loai, hm, md) && !n)
+        L.push(md === "Nghiêm trọng" ? "Sự cố Nghiêm trọng phải chọn nhà cung cấp liên quan." : "Sự cố về " + hm.toLowerCase() + " phải ghi nhà cung cấp.");
+      if (n && !nhaCungCap.some(x => x.ten_ncc.trim().toLowerCase() === n.toLowerCase()) && !LOAI_NCC.includes(hm) && !v("f-loaincc"))
+        L.push("Nhà cung cấp mới: chọn loại nhà cung cấp.");
+      ban.ten_ncc = n || null;
+      ban.loai_ncc = LOAI_NCC.includes(hm) ? hm : v("f-loaincc");
+    }
+    Object.assign(ban, { hang_muc: hm || null, muc_do: md || null, trang_thai: tt || null, su_co_goc: goc ? +goc : null });
+  }
+  if (loai === "Chi phí phát sinh"){
+    const cp = v("f-cp").replace(",", ".");
+    if (cp === "" || isNaN(+cp)) L.push("Chi phí phát sinh cần ghi số tiền (triệu đồng).");
+    else {
+      const so = +cp;
+      if (so >= 1000) L.push("Chi phí ghi theo đơn vị TRIỆU đồng (VD: 1,5 triệu ghi 1.5).");
+      if (so < 0 && !dc) L.push("Chi phí âm chỉ dùng cho dòng điều chỉnh.");
+      if (so > 2 && !/duyệt/i.test(gc)) L.push("Khoản trên 2 triệu đồng: ghi “Người duyệt: <tên>” trong ghi chú.");
+      ban.chi_phi_trieu_dong = so;
+    }
+    ban.hang_muc = hm || null;
+  }
+  if (loai === "Phản hồi của khách"){ ban.hang_muc = hm || null; ban.muc_do = md || null; }
+  if (dc){
+    if (!dcDong) L.push("Dòng điều chỉnh: chọn dòng bị ghi nhầm.");
+    if (!gc) L.push("Dòng điều chỉnh phải có ghi chú lý do.");
+    ban.dieu_chinh_cho = dcDong ? +dcDong : null;
+  }
+  return { loi: L, moi, ban };
+}
+
+function baoLoi(d, ds){
+  const o = q(d,"loi-o");
+  if (!ds.length){ o.innerHTML = ""; o.classList.add("an"); d.el.classList.remove("co-loi"); return; }
+  o.innerHTML = ds.map(x => "• " + esc(x)).join("<br>");
+  o.classList.remove("an"); d.el.classList.add("co-loi");
+}
+
+async function layNhaCungCap(ten, hm){
+  const co = nhaCungCap.find(n => n.ten_ncc.trim().toLowerCase() === ten.trim().toLowerCase());
+  if (co) return co.id;
+  const { data, error } = await sb.from("nha_cung_cap").insert({ ten_ncc: ten.trim(), hang_muc: hm }).select("id").single();
+  if (error){
+    await taiNhaCungCap();
+    const lai = nhaCungCap.find(n => n.ten_ncc.trim().toLowerCase() === ten.trim().toLowerCase());
+    if (lai) return lai.id;
+    throw error;
+  }
+  await taiNhaCungCap();
+  return data.id;
+}
+
+const doanVuaTao = {};
+async function luuDong(d){
+  const { loi, moi, ban } = kiemTra(d);
+  if (loi.length){ baoLoi(d, loi); return false; }
+  try {
+    let ma;
+    if (d.moi){
+      ma = moi.ma_doan;
+      if (!doanVuaTao[ma]){
+        const { error } = await sb.from("doan").insert(moi);
+        if (error) throw error;
+        doanVuaTao[ma] = true;
+      }
+      d.moi = false;
+      await chonDoan(d, { ma_doan: ma, tuyen_tour: moi.tuyen_tour, khach_hang: moi.khach_hang, ngay_khoi_hanh: moi.ngay_khoi_hanh });
+    } else ma = d.doan.ma_doan;
+
+    let ncc = null;
+    const g = ban.su_co_goc ? d.suCoMo.find(s => s.id === ban.su_co_goc) : null;
+    if (g && g.nha_cung_cap_id) ncc = g.nha_cung_cap_id;
+    else if (ban.ten_ncc) ncc = await layNhaCungCap(ban.ten_ncc, ban.loai_ncc);
+
+    const ghi = { ma_doan: ma, loai_ghi_nhan: ban.loai_ghi_nhan, hang_muc: ban.hang_muc, muc_do: ban.muc_do,
+      nha_cung_cap_id: ncc, so_khach_co_mat: ban.so_khach_co_mat, chi_phi_trieu_dong: ban.chi_phi_trieu_dong,
+      trang_thai: ban.trang_thai, su_co_goc: ban.su_co_goc, dieu_chinh_cho: ban.dieu_chinh_cho, ghi_chu: ban.ghi_chu,
+      khach_rut_khieu_nai: !!ban.khach_rut_khieu_nai };
+    const { data, error } = await sb.from("nhat_ky").insert(ghi).select("id,thoi_diem_ghi").single();
+    if (error) throw error;
+
+    d.daLuu = true; d.idDaLuu = data.id; d.gocDaLuu = ban.su_co_goc;
+    baoLoi(d, []);
+    d.el.classList.add("da-luu");
+    const tt = q(d,"trang-thai-dong"); tt.textContent = `✓ Đã lưu lúc ${gioVN(data.thoi_diem_ghi)} (#${data.id})`; tt.classList.add("ok");
+    d.el.querySelectorAll("input,select,textarea,button").forEach(x => x.disabled = true);
+    return true;
+  } catch (e){
+    baoLoi(d, [dichLoi(e)]);
+    return false;
+  }
+}
+
+$("nutthemdong").addEventListener("click", () => { const d = themDong(); d.el.scrollIntoView({behavior:"smooth", block:"center"}); });
+$("nutluu").addEventListener("click", async () => {
+  const nut = $("nutluu"); nut.disabled = true; nut.textContent = "Đang lưu…";
+  let ok = 0, hong = 0;
+  for (const d of dongs){            // luu lan luot de dong sau thay su co / doan vua tao o dong truoc
+    if (d.daLuu || dongTrong(d)) continue;
+    (await luuDong(d)) ? ok++ : hong++;
+  }
+  nut.disabled = false; nut.textContent = "Lưu tất cả";
+  await Promise.all([demHomNay(), taiDoan(), nhacDiemDanh()]);
+  for (const d of dongs) if (!d.daLuu && d.doan) await taiThongTinDoan(d);
+  if (ok + hong === 0) alert("Chưa có dòng nào để lưu.");
+  else if (hong) { const dau = dongs.find(d => d.el.classList.contains("co-loi")); if (dau) dau.el.scrollIntoView({behavior:"smooth", block:"center"}); }
+});
+
+// Mo lai trang khi da dang nhap truoc do
+sb.auth.getSession().then(({ data }) => { if (data.session) vaoTrang(); });
+</script>
+</body>
+</html>
